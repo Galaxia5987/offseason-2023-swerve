@@ -5,11 +5,12 @@
 package frc.robot;
 
 import com.kauailabs.navx.frc.AHRS;
-import edu.wpi.first.wpilibj.PowerDistribution;
-import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.valuetuner.NetworkTableConstant;
+
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -17,11 +18,48 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
  * project.
  */
 public class Robot extends TimedRobot {
-    public static boolean debug = false;
+    public static final boolean debug = false;//!DriverStation.isFMSAttached();
     public static final AHRS navx = new AHRS(SPI.Port.kMXP);
+    //    private final AddressableLED led = new AddressableLED(1);
+    private static Rotation2d zeroAngle = new Rotation2d();
     public PowerDistribution pdp = new PowerDistribution();
-    private RobotContainer m_robotContainer;
     private Command m_autonomousCommand;
+    private RobotContainer m_robotContainer;
+//    private AddressableLEDBuffer buffer = new AddressableLEDBuffer(54);
+
+    /**
+     * Gets the current angle of the robot in respect to the start angle.
+     *
+     * @return the current angle of the robot in respect to the start angle.
+     */
+    public static Rotation2d getAngle() {
+        return getRawAngle().minus(zeroAngle);
+    }
+
+    /**
+     * Gets the raw angle from the navx.
+     *
+     * @return the angle of the robot in respect to the angle of the robot initiation time.
+     */
+    public static Rotation2d getRawAngle() {
+        return Robot.navx.getRotation2d();
+    }
+
+    /**
+     * Resets the angle of the navx to the current angle.
+     */
+    public static void resetAngle() {
+        resetAngle(new Rotation2d());
+    }
+
+    /**
+     * Resets the angle of the navx to the current angle.
+     *
+     * @param angle the angle in -180 to 180 degrees coordinate system.
+     */
+    public static void resetAngle(Rotation2d angle) {
+        zeroAngle = getRawAngle().minus(angle);
+    }
 
     /**
      * This function is run when the robot is first started up and should be used for any
@@ -29,7 +67,18 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void robotInit() {
+        DataLogManager.start();
+        DriverStation.startDataLog(DataLogManager.getLog());
+
+//        startAngle = Robot.navx.getRotation2d();
+        resetAngle();
+        if (debug) {
+            NetworkTableConstant.initializeAllConstants();
+        }
         m_robotContainer = new RobotContainer();
+//        UsbCamera usbCamera = new UsbCamera("USB Camera 0", 0);
+//        MjpegServer mjpegServer1 = new MjpegServer("serve_USB Camera 0", 1181);
+//        mjpegServer1.setSource(usbCamera);
     }
 
     /**
@@ -69,7 +118,6 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void autonomousPeriodic() {
-
     }
 
     /**
